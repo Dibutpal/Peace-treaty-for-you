@@ -1,0 +1,772 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Can We Make Up? 🥺💕</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <!-- Canvas Confetti library -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  
+  <style>
+    body {
+      font-family: 'Nunito', sans-serif;
+      overflow-x: hidden;
+      background: radial-gradient(circle at 15% 20%, #ffeaf1 0%, #fff4f8 40%, #f4e8fd 100%);
+    }
+    .handwriting {
+      font-family: 'Caveat', cursive;
+    }
+    @keyframes floatBubble {
+      0% { transform: translateY(0px) rotate(0deg); opacity: 0.8; }
+      50% { transform: translateY(-25px) rotate(8deg); opacity: 1; }
+      100% { transform: translateY(0px) rotate(0deg); opacity: 0.8; }
+    }
+    .floating-bear {
+      animation: floatBubble 4s ease-in-out infinite;
+    }
+    @keyframes pulseGlow {
+      0%, 100% { transform: scale(1); box-shadow: 0 10px 25px -5px rgba(244, 114, 182, 0.4); }
+      50% { transform: scale(1.04); box-shadow: 0 20px 35px -5px rgba(244, 114, 182, 0.6); }
+    }
+    .pulse-btn {
+      animation: pulseGlow 2s infinite ease-in-out;
+    }
+    /* Floating background hearts */
+    .bg-heart {
+      position: absolute;
+      pointer-events: none;
+      user-select: none;
+      animation: floatUpward linear infinite;
+    }
+    @keyframes floatUpward {
+      0% {
+        transform: translateY(105vh) scale(0.6) rotate(0deg);
+        opacity: 0;
+      }
+      10% { opacity: 0.7; }
+      90% { opacity: 0.7; }
+      100% {
+        transform: translateY(-10vh) scale(1.1) rotate(45deg);
+        opacity: 0;
+      }
+    }
+    /* Custom scroll styling */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #fbcfe8;
+      border-radius: 10px;
+    }
+  </style>
+</head>
+
+<body class="min-h-screen text-slate-700 relative flex flex-col justify-between selection:bg-pink-200">
+
+  <!-- Background floating particles layer -->
+  <div id="heartsContainer" class="fixed inset-0 overflow-hidden pointer-events-none z-0"></div>
+
+  <!-- Top Helper / Quick Configuration Bar -->
+  <header class="relative z-20 w-full px-4 pt-3 pb-2 flex justify-between items-center max-w-xl mx-auto text-xs text-pink-600/80">
+    <div class="flex items-center gap-1.5 bg-white/70 backdrop-blur-md px-3 py-1.5 rounded-full shadow-sm border border-pink-100">
+      <span id="badgeTopText">✨ Sending with love</span>
+    </div>
+    <div class="flex items-center gap-2">
+      <!-- Edit Mode Toggle Button -->
+      <button id="toggleEditBtn" onclick="toggleEditPanel()" class="flex items-center gap-1 bg-white/80 hover:bg-white text-pink-700 px-3 py-1.5 rounded-full shadow-sm border border-pink-200 transition active:scale-95 font-bold">
+        ✏️ <span>Customize & Share</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Card Container -->
+  <main class="relative z-10 flex-1 flex items-center justify-center p-4">
+    <div class="w-full max-w-md bg-white/85 backdrop-blur-xl rounded-3xl shadow-xl border border-pink-100/80 p-6 sm:p-8 text-center relative transition-all duration-300">
+      
+      <!-- Bear / Character Illustration & Emotions -->
+      <div class="relative w-36 h-36 mx-auto mb-4 floating-bear">
+        <svg id="bearSvg" viewBox="0 0 200 200" class="w-full h-full drop-shadow-md">
+          <!-- Ears -->
+          <circle cx="50" cy="55" r="26" fill="#F8B4C4" />
+          <circle cx="50" cy="55" r="16" fill="#FCE4EC" />
+          <circle cx="150" cy="55" r="26" fill="#F8B4C4" />
+          <circle cx="150" cy="55" r="16" fill="#FCE4EC" />
+          <!-- Head -->
+          <ellipse cx="100" cy="100" rx="72" ry="66" fill="#FFCCD7" />
+          <!-- Eyes (Apologetic Puppy Eyes) -->
+          <ellipse id="eyeLeft" cx="75" cy="95" rx="8" ry="11" fill="#4A3439" />
+          <ellipse id="eyeRight" cx="125" cy="95" rx="8" ry="11" fill="#4A3439" />
+          <circle cx="73" cy="91" r="3.5" fill="#FFFFFF" />
+          <circle cx="123" cy="91" r="3.5" fill="#FFFFFF" />
+          <circle cx="77" cy="98" r="1.5" fill="#FFFFFF" />
+          <circle cx="127" cy="98" r="1.5" fill="#FFFFFF" />
+          <!-- Tear droplets (toggled on mood) -->
+          <g id="tearGroup">
+            <path d="M 68 106 C 68 106 63 116 68 119 C 73 119 72 110 68 106 Z" fill="#60A5FA" opacity="0.8"/>
+            <path d="M 132 106 C 132 106 137 116 132 119 C 127 119 128 110 132 106 Z" fill="#60A5FA" opacity="0.8"/>
+          </g>
+          <!-- Cheeks Blush -->
+          <circle cx="60" cy="112" r="12" fill="#F472B6" opacity="0.45" />
+          <circle cx="140" cy="112" r="12" fill="#F472B6" opacity="0.45" />
+          <!-- Snout -->
+          <ellipse cx="100" cy="115" rx="24" ry="19" fill="#FFF1F5" />
+          <!-- Nose -->
+          <polygon points="94,110 106,110 100,118" fill="#5C3B43" />
+          <!-- Cute Sad/Pout Mouth -->
+          <path id="bearMouth" d="M 92 124 Q 100 119 108 124" fill="transparent" stroke="#5C3B43" stroke-width="2.5" stroke-linecap="round" />
+          <!-- Little Apology Item in hands -->
+          <g transform="translate(100, 155)">
+            <ellipse cx="-30" cy="-6" rx="12" ry="9" fill="#FFCCD7" />
+            <ellipse cx="30" cy="-6" rx="12" ry="9" fill="#FFCCD7" />
+            <path d="M -15 8 Q 0 -6 15 8" fill="none" stroke="#F472B6" stroke-width="4" stroke-linecap="round" />
+            <text id="bearEmojiItem" x="0" y="3" text-anchor="middle" font-size="20">🌸</text>
+          </g>
+        </svg>
+      </div>
+
+      <!-- Heading & Editable Text Displays -->
+      <span id="displayBadge" class="inline-block px-3 py-1 bg-pink-100 text-pink-700 text-xs font-bold rounded-full tracking-wide uppercase mb-2">
+        Official Peace Treaty 🕊️
+      </span>
+      <h1 class="text-2xl sm:text-3xl font-extrabold text-pink-900 leading-tight">
+        <span id="displayGreeting">Hey my sweet girl...</span> <br />
+        <span id="displayQuestion" class="handwriting text-3xl sm:text-4xl text-pink-500 font-bold">Can we make up? 🥺</span>
+      </h1>
+
+      <p id="displayMessage" class="mt-3 text-sm sm:text-base text-slate-600 leading-relaxed">
+        I really hate being in a fight with you. The world feels completely out of tune when you're upset with me, and honestly... 
+        <strong class="text-pink-600 font-semibold">you're my favorite person in the entire universe.</strong>
+      </p>
+
+      <!-- Peace Voucher Card -->
+      <div class="mt-5 p-4 rounded-2xl bg-gradient-to-r from-pink-50 via-rose-50 to-purple-50 border-2 border-dashed border-pink-200 text-left relative overflow-hidden group">
+        <div class="absolute -right-3 -top-3 text-3xl opacity-20 group-hover:scale-125 transition-transform">🏷️</div>
+        <p class="text-xs font-black tracking-wider uppercase text-pink-700 flex items-center justify-between">
+          <span class="flex items-center gap-1.5"><span id="voucherIcon">💌</span> <span id="voucherTitle">Peace Offering Coupon</span></span>
+          <span id="displaySender" class="text-[11px] lowercase tracking-normal text-pink-400 font-semibold">with love</span>
+        </p>
+        <ul id="displayPerksList" class="mt-2 text-xs sm:text-sm text-slate-700 space-y-1.5 font-medium">
+          <!-- Dynamically populated perks -->
+        </ul>
+      </div>
+
+      <!-- Interactive Decision Buttons Area -->
+      <div class="relative mt-7 min-h-[95px] flex items-center justify-center">
+        <!-- Button container with flex wrapping -->
+        <div id="buttonsWrapper" class="flex flex-col sm:flex-row items-center justify-center gap-4 w-full">
+          <!-- Primary FORGIVE ME button -->
+          <button id="forgiveBtn" onclick="handleForgiveClick()" class="pulse-btn w-full sm:w-auto px-7 py-3.5 bg-gradient-to-r from-pink-500 to-rose-400 hover:from-pink-600 hover:to-rose-500 text-white font-extrabold text-base sm:text-lg rounded-2xl shadow-lg shadow-pink-300/50 transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer z-10">
+            <span id="displayForgiveBtnText">Yes, let's make up! 💕</span>
+          </button>
+
+          <!-- Playful STILL MAD button -->
+          <button id="madBtn" onmouseover="dodgeMadButton()" onclick="handleMadClick()" class="w-full sm:w-auto px-5 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-sm sm:text-base rounded-2xl transition-all duration-200 select-none border border-slate-200 shadow-sm active:scale-90 z-10">
+            <span id="displayMadBtnText">Still mad 😤</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Playful response banter message -->
+      <p id="banterText" class="text-xs font-semibold text-rose-500 h-5 mt-2 transition-opacity opacity-0"></p>
+
+    </div>
+  </main>
+
+  <!-- Sweet Little Footer -->
+  <footer class="relative z-10 text-center py-4 text-xs text-pink-400">
+    <p id="footerSignature">Crafted with lots of love, remorse, and snacks in mind 🍰</p>
+  </footer>
+
+  <!-- EDIT & CUSTOMIZATION DRAWER / MODAL -->
+  <div id="editPanelModal" class="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 opacity-0 pointer-events-none transition-all duration-300">
+    <div class="bg-white w-full max-w-lg rounded-3xl p-5 sm:p-6 shadow-2xl border border-pink-100 max-h-[92vh] flex flex-col text-left">
+      
+      <!-- Drawer Header -->
+      <div class="flex items-center justify-between pb-3 border-b border-pink-100 mb-4">
+        <div>
+          <h2 class="text-xl font-black text-pink-900">Customizer & Share ✍️</h2>
+          <p class="text-xs text-slate-500">Tailor the words, perks, and contact details for your partner</p>
+        </div>
+        <button onclick="toggleEditPanel()" class="p-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-pink-50 transition">
+          ✕
+        </button>
+      </div>
+
+      <!-- Scrollable Form Fields -->
+      <div class="flex-1 overflow-y-auto space-y-4 pr-1 text-xs">
+        
+        <!-- Recipient & Sender -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-pink-900 uppercase tracking-wider mb-1">Nickname / Recipient:</label>
+            <input id="editGreeting" type="text" class="w-full px-3 py-2 border border-pink-200 rounded-xl focus:ring-2 focus:ring-pink-400 focus:outline-none" placeholder="Hey my sweet girl..." />
+          </div>
+          <div>
+            <label class="block font-bold text-pink-900 uppercase tracking-wider mb-1">Your Name / Sign-off:</label>
+            <input id="editSender" type="text" class="w-full px-3 py-2 border border-pink-200 rounded-xl focus:ring-2 focus:ring-pink-400 focus:outline-none" placeholder="From your goofy boyfriend" />
+          </div>
+        </div>
+
+        <!-- Main Question & Badge -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-pink-900 uppercase tracking-wider mb-1">Top Badge Label:</label>
+            <input id="editBadge" type="text" class="w-full px-3 py-2 border border-pink-200 rounded-xl focus:ring-2 focus:ring-pink-400 focus:outline-none" placeholder="Official Peace Treaty 🕊️" />
+          </div>
+          <div>
+            <label class="block font-bold text-pink-900 uppercase tracking-wider mb-1">Big Highlight Question:</label>
+            <input id="editQuestion" type="text" class="w-full px-3 py-2 border border-pink-200 rounded-xl focus:ring-2 focus:ring-pink-400 focus:outline-none" placeholder="Can we make up? 🥺" />
+          </div>
+        </div>
+
+        <!-- Apology Paragraph -->
+        <div>
+          <label class="block font-bold text-pink-900 uppercase tracking-wider mb-1">Apology Note / Message:</label>
+          <textarea id="editMessage" rows="3" class="w-full px-3 py-2 border border-pink-200 rounded-xl focus:ring-2 focus:ring-pink-400 focus:outline-none resize-none leading-relaxed"></textarea>
+        </div>
+
+        <!-- Bear Holding Item / Vibe -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-pink-900 uppercase tracking-wider mb-1">Gift Bear is Holding:</label>
+            <select id="editBearItem" class="w-full px-3 py-2 border border-pink-200 rounded-xl focus:ring-2 focus:ring-pink-400 focus:outline-none bg-white">
+              <option value="🌸">Flower (🌸)</option>
+              <option value="🍫">Chocolate (🍫)</option>
+              <option value="🧋">Boba Milk Tea (🧋)</option>
+              <option value="💌">Love Letter (💌)</option>
+              <option value="🧸">Mini Teddy (🧸)</option>
+              <option value="🍕">Pizza Slice (🍕)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-bold text-pink-900 uppercase tracking-wider mb-1">Your Phone (WhatsApp / SMS):</label>
+            <input id="editPhone" type="tel" placeholder="e.g. +1234567890" class="w-full px-3 py-2 border border-pink-200 rounded-xl focus:ring-2 focus:ring-pink-400 focus:outline-none" />
+          </div>
+        </div>
+
+        <!-- Peace Voucher Perks Editor -->
+        <div>
+          <div class="flex items-center justify-between mb-1.5">
+            <label class="block font-bold text-pink-900 uppercase tracking-wider">Peace Voucher Perks:</label>
+            <button onclick="addPerkRow()" type="button" class="text-pink-600 hover:text-pink-800 font-bold text-xs flex items-center gap-1">
+              ➕ Add Perk
+            </button>
+          </div>
+          <div id="perksEditList" class="space-y-2">
+            <!-- Dynamic rows of perk inputs -->
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Action Footer -->
+      <div class="pt-4 border-t border-pink-100 mt-3 flex flex-col sm:flex-row gap-2">
+        <button onclick="saveAndApplyEdits()" class="flex-1 py-2.5 px-4 bg-pink-500 hover:bg-pink-600 text-white font-bold rounded-xl transition text-xs sm:text-sm shadow-md shadow-pink-200 active:scale-95">
+          Apply to Page ✨
+        </button>
+        <button onclick="generateShareableLink()" class="flex-1 py-2.5 px-4 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold rounded-xl transition text-xs sm:text-sm shadow-md active:scale-95 flex items-center justify-center gap-1.5">
+          🔗 <span>Copy Shareable Link</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- CELEBRATION & DIRECT RESPONSE MODAL -->
+  <div id="responseModal" class="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 opacity-0 pointer-events-none transition-all duration-300">
+    <div id="modalBox" class="bg-white w-full max-w-md rounded-3xl p-6 sm:p-7 shadow-2xl border border-pink-100 transform scale-95 transition-all text-center relative max-h-[90vh] overflow-y-auto">
+      
+      <div class="text-5xl mb-2 animate-bounce">🎉💖🥰</div>
+      <h2 class="text-2xl font-black text-pink-900">YAY! You just made my day!</h2>
+      <p class="text-xs sm:text-sm text-slate-600 mt-1">
+        I promise to be better and give you the biggest hug. Now send your terms or snack demands right to my phone:
+      </p>
+
+      <!-- Terms & Note Inputs -->
+      <div class="mt-4 text-left space-y-3">
+        <div>
+          <label class="block text-xs font-bold text-pink-800 uppercase tracking-wider mb-1">
+            🧁 Snack / Food Penalty:
+          </label>
+          <input id="snackChoice" type="text" placeholder="e.g. Ice cream, boba, pizza, or chocolate!" value="Ice cream and extra long cuddles" class="w-full px-4 py-2.5 rounded-xl border border-pink-200 bg-pink-50/40 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400 font-medium text-slate-800 placeholder-slate-400" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-pink-800 uppercase tracking-wider mb-1">
+            💌 Note for me:
+          </label>
+          <textarea id="gfCustomNote" rows="2" placeholder="Write anything you want me to know..." class="w-full px-4 py-2.5 rounded-xl border border-pink-200 bg-pink-50/40 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400 font-medium text-slate-800 placeholder-slate-400 resize-none">I forgive you, but you definitely owe me snacks! 🥰</textarea>
+        </div>
+      </div>
+
+      <!-- Action Buttons to reach your phone -->
+      <div class="mt-6 flex flex-col gap-2.5">
+        <!-- Direct WhatsApp Button -->
+        <button onclick="sendViaWhatsApp()" class="w-full py-3.5 px-4 bg-emerald-500 hover:bg-emerald-600 text-white font-black rounded-2xl shadow-lg shadow-emerald-200 transition active:scale-95 flex items-center justify-center gap-2 text-sm sm:text-base">
+          <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24">
+            <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/>
+          </svg>
+          Send to My WhatsApp 📱
+        </button>
+
+        <!-- Direct SMS Fallback -->
+        <button onclick="sendViaSMS()" class="w-full py-2.5 px-4 bg-pink-100 hover:bg-pink-200 text-pink-800 font-bold rounded-2xl transition active:scale-95 flex items-center justify-center gap-2 text-sm">
+          <span>💬</span> Send via Standard SMS / iMessage
+        </button>
+        
+        <!-- Copy to clipboard option -->
+        <button onclick="copyMyMessage()" class="text-xs text-slate-500 hover:text-slate-800 py-1 underline">
+          Or copy response text to clipboard
+        </button>
+      </div>
+
+      <!-- Close preview button -->
+      <button onclick="closeResponseModal()" class="mt-4 text-xs font-semibold text-slate-400 hover:text-slate-600">
+        Close / Keep browsing
+      </button>
+
+    </div>
+  </div>
+
+  <!-- CONFIGURATION MODAL (To easily personalize phone number) -->
+  <div id="configModal" class="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 opacity-0 pointer-events-none transition-all duration-300">
+    <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl border border-pink-100 text-center">
+      <div class="text-3xl mb-2">⚙️</div>
+      <h3 class="text-lg font-black text-slate-800">Your Contact Info</h3>
+      <p class="text-xs text-slate-500 mt-1">
+        Enter your phone number (including country code) so her answer comes directly to your WhatsApp or SMS!
+      </p>
+
+      <div class="mt-4 text-left">
+        <label class="block text-xs font-bold text-slate-600 mb-1">Your Phone Number:</label>
+        <input id="userPhoneInput" type="tel" placeholder="e.g. +14155552671 or 919876543210" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-pink-400" />
+        <span class="text-[11px] text-slate-400 mt-1 block">Include country code without special characters or with +</span>
+      </div>
+
+      <div class="mt-4 flex gap-2">
+        <button onclick="savePhoneNumber()" class="flex-1 py-2.5 bg-pink-500 hover:bg-pink-600 text-white font-bold rounded-xl text-sm transition">
+          Save Settings
+        </button>
+        <button onclick="toggleConfigModal()" class="py-2.5 px-4 bg-slate-100 text-slate-600 font-semibold rounded-xl text-sm">
+          Cancel
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Custom Alert Toast (never using native alert) -->
+  <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900/90 backdrop-blur-md text-white text-xs px-4 py-2.5 rounded-full shadow-2xl z-50 opacity-0 pointer-events-none transition-all duration-300 flex items-center gap-2">
+    <span id="toastMsg">Copied!</span>
+  </div>
+
+  <script>
+    // App Config & Editable Content State
+    const defaultSiteData = {
+      greeting: "Hey my sweet girl...",
+      question: "Can we make up? 🥺",
+      badge: "Official Peace Treaty 🕊️",
+      message: "I really hate being in a fight with you. The world feels completely out of tune when you're upset with me, and honestly... you're my favorite person in the entire universe.",
+      sender: "from your goofy boy",
+      bearItem: "🌸",
+      phone: "",
+      perks: [
+        "Valid for unlimited warm hugs & cuddles",
+        "A treat of your favorite snack / boba",
+        "Me admitting you were probably 100% right"
+      ]
+    };
+
+    let siteData = { ...defaultSiteData };
+    let madClickCount = 0;
+    let dodgeCount = 0;
+
+    // Teasing banter phrases for the "Still mad" button
+    const banters = [
+      "Wait, are you sure? Look at that puppy face! 🥺",
+      "Think of the snacks! Sweet treats are waiting! 🍩",
+      "Pretty please with sprinkles on top? 🍨",
+      "I'll give you back rubs for an entire week! 💆‍♀️",
+      "Okay but what if I admit I was 100% wrong? 🙈",
+      "The 'Still mad' button is feeling sleepy now... 😴",
+      "System Error 404: Anger not found in this cute relationship! 🌸"
+    ];
+
+    // Initialize floating hearts on background
+    function createFloatingHearts() {
+      const container = document.getElementById('heartsContainer');
+      const emojis = ['💖', '🌸', '✨', '💕', '🌷', '🤍'];
+      const count = 16;
+
+      for (let i = 0; i < count; i++) {
+        const heart = document.createElement('div');
+        heart.className = 'bg-heart';
+        heart.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+        heart.style.left = Math.random() * 95 + 'vw';
+        heart.style.fontSize = (Math.random() * 16 + 14) + 'px';
+        heart.style.animationDuration = (Math.random() * 8 + 8) + 's';
+        heart.style.animationDelay = (Math.random() * 7) + 's';
+        container.appendChild(heart);
+      }
+    }
+
+    // Render Data to Page DOM
+    function renderContent() {
+      document.getElementById('displayGreeting').textContent = siteData.greeting;
+      document.getElementById('displayQuestion').textContent = siteData.question;
+      document.getElementById('displayBadge').textContent = siteData.badge;
+      document.getElementById('displayMessage').textContent = siteData.message;
+      document.getElementById('displaySender').textContent = siteData.sender ? `— ${siteData.sender}` : '';
+      document.getElementById('bearEmojiItem').textContent = siteData.bearItem || '🌸';
+      
+      // Render perks
+      const perksUl = document.getElementById('displayPerksList');
+      perksUl.innerHTML = '';
+      siteData.perks.forEach(perkText => {
+        const li = document.createElement('li');
+        li.className = 'flex items-center gap-2';
+        li.innerHTML = `<span class="text-pink-500 font-bold">✔</span> <span>${escapeHtml(perkText)}</span>`;
+        perksUl.appendChild(li);
+      });
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Edit Panel open/close
+    function toggleEditPanel() {
+      const modal = document.getElementById('editPanelModal');
+      const isHidden = modal.classList.contains('opacity-0');
+      
+      if (isHidden) {
+        // Populate inputs with current state
+        document.getElementById('editGreeting').value = siteData.greeting;
+        document.getElementById('editQuestion').value = siteData.question;
+        document.getElementById('editBadge').value = siteData.badge;
+        document.getElementById('editMessage').value = siteData.message;
+        document.getElementById('editSender').value = siteData.sender;
+        document.getElementById('editBearItem').value = siteData.bearItem;
+        document.getElementById('editPhone').value = siteData.phone;
+        renderPerkInputRows();
+        
+        modal.classList.remove('opacity-0', 'pointer-events-none');
+      } else {
+        modal.classList.add('opacity-0', 'pointer-events-none');
+      }
+    }
+
+    // Render input rows for each perk in the edit modal
+    function renderPerkInputRows() {
+      const container = document.getElementById('perksEditList');
+      container.innerHTML = '';
+      siteData.perks.forEach((perk, index) => {
+        const row = document.createElement('div');
+        row.className = 'flex items-center gap-2';
+        row.innerHTML = `
+          <input type="text" value="${escapeHtml(perk)}" class="perk-input flex-1 px-3 py-1.5 border border-pink-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-pink-400 text-xs" />
+          <button type="button" onclick="removePerkRow(${index})" class="text-rose-400 hover:text-rose-600 px-2 py-1 font-bold text-sm">✕</button>
+        `;
+        container.appendChild(row);
+      });
+    }
+
+    function addPerkRow() {
+      siteData.perks.push("Extra warm hug coupon");
+      renderPerkInputRows();
+    }
+
+    function removePerkRow(index) {
+      if (siteData.perks.length <= 1) {
+        showToast("Keep at least one sweet perk!");
+        return;
+      }
+      siteData.perks.splice(index, 1);
+      renderPerkInputRows();
+    }
+
+    // Save and update preview
+    function saveAndApplyEdits() {
+      // Gather inputs
+      siteData.greeting = document.getElementById('editGreeting').value.trim() || defaultSiteData.greeting;
+      siteData.question = document.getElementById('editQuestion').value.trim() || defaultSiteData.question;
+      siteData.badge = document.getElementById('editBadge').value.trim() || defaultSiteData.badge;
+      siteData.message = document.getElementById('editMessage').value.trim() || defaultSiteData.message;
+      siteData.sender = document.getElementById('editSender').value.trim();
+      siteData.bearItem = document.getElementById('editBearItem').value || '🌸';
+      siteData.phone = document.getElementById('editPhone').value.trim().replace(/[^0-9+]/g, '');
+
+      // Perks
+      const perkInputs = document.querySelectorAll('.perk-input');
+      const newPerks = [];
+      perkInputs.forEach(input => {
+        if (input.value.trim()) newPerks.push(input.value.trim());
+      });
+      if (newPerks.length > 0) siteData.perks = newPerks;
+
+      // Save to localStorage as well
+      localStorage.setItem('cute_apology_data', JSON.stringify(siteData));
+
+      renderContent();
+      toggleEditPanel();
+      showToast('Customized successfully! ✨');
+    }
+
+    // Shareable Link generation (URL encoding)
+    function generateShareableLink() {
+      // Collect current modal values first
+      siteData.greeting = document.getElementById('editGreeting').value.trim() || defaultSiteData.greeting;
+      siteData.question = document.getElementById('editQuestion').value.trim() || defaultSiteData.question;
+      siteData.badge = document.getElementById('editBadge').value.trim() || defaultSiteData.badge;
+      siteData.message = document.getElementById('editMessage').value.trim() || defaultSiteData.message;
+      siteData.sender = document.getElementById('editSender').value.trim();
+      siteData.bearItem = document.getElementById('editBearItem').value || '🌸';
+      siteData.phone = document.getElementById('editPhone').value.trim().replace(/[^0-9+]/g, '');
+
+      const perkInputs = document.querySelectorAll('.perk-input');
+      const newPerks = [];
+      perkInputs.forEach(input => {
+        if (input.value.trim()) newPerks.push(input.value.trim());
+      });
+      if (newPerks.length > 0) siteData.perks = newPerks;
+
+      renderContent();
+
+      // Encode payload to UTF-8 Base64
+      try {
+        const jsonStr = JSON.stringify(siteData);
+        const encoded = btoa(encodeURIComponent(jsonStr));
+        const shareUrl = `${window.location.origin}${window.location.pathname}?c=${encoded}`;
+
+        // Copy shareable link to clipboard
+        const tempArea = document.createElement('textarea');
+        tempArea.value = shareUrl;
+        document.body.appendChild(tempArea);
+        tempArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(tempArea);
+
+        toggleEditPanel();
+        showToast('Link copied! Send it to her so it opens customized 💌');
+      } catch (e) {
+        showToast('Generated link! Copy from your browser bar.');
+      }
+    }
+
+    // Playful runaway logic when hovering or tapping "Still mad"
+    function dodgeMadButton() {
+      const btn = document.getElementById('madBtn');
+      const forgiveBtn = document.getElementById('forgiveBtn');
+      dodgeCount++;
+
+      // Change button text dynamically
+      if (dodgeCount === 1) btn.textContent = "Are you really sure? 🤨";
+      else if (dodgeCount === 2) btn.textContent = "Think about snacks! 🍦";
+      else if (dodgeCount === 3) btn.textContent = "Click the pink one! 👉";
+      else if (dodgeCount === 4) btn.textContent = "It was a tiny oopsie! 🙈";
+      else if (dodgeCount >= 5) btn.textContent = "Button broken! Pick Yes! 🥺";
+
+      // Slight scale-up for Forgive Me button to make it more enticing
+      const newScale = Math.min(1.4, 1 + dodgeCount * 0.05);
+      forgiveBtn.style.transform = `scale(${newScale})`;
+
+      // Random playful movement offset without overflowing view
+      const maxOffset = 60;
+      const randomX = (Math.random() - 0.5) * maxOffset;
+      const randomY = (Math.random() - 0.5) * maxOffset;
+      btn.style.transform = `translate(${randomX}px, ${randomY}px)`;
+
+      // Show teasing message
+      showBanter();
+    }
+
+    // When "Still mad" is actually clicked/tapped
+    function handleMadClick() {
+      madClickCount++;
+      dodgeMadButton();
+      
+      // Make bear look even more apologetic
+      const bearMouth = document.getElementById('bearMouth');
+      bearMouth.setAttribute('d', 'M 90 128 Q 100 115 110 128'); // Deeper pout
+    }
+
+    function showBanter() {
+      const banterEl = document.getElementById('banterText');
+      const msg = banters[(dodgeCount - 1) % banters.length];
+      banterEl.textContent = msg;
+      banterEl.style.opacity = '1';
+    }
+
+    // When she forgives!
+    function handleForgiveClick() {
+      // Trigger lovely confetti
+      triggerCelebration();
+
+      // Transform bear face to happy smiling face
+      const bearMouth = document.getElementById('bearMouth');
+      const tearGroup = document.getElementById('tearGroup');
+      if (bearMouth) bearMouth.setAttribute('d', 'M 88 116 Q 100 132 112 116'); // Big smile
+      if (tearGroup) tearGroup.style.display = 'none';
+
+      // Open message response modal
+      setTimeout(() => {
+        openResponseModal();
+      }, 500);
+    }
+
+    // Confetti cannon blast
+    function triggerCelebration() {
+      if (typeof confetti === 'function') {
+        confetti({
+          particleCount: 80,
+          spread: 70,
+          origin: { y: 0.6 },
+          colors: ['#f472b6', '#fb7185', '#c084fc', '#fde047', '#ffffff']
+        });
+        setTimeout(() => {
+          confetti({
+            particleCount: 50,
+            angle: 60,
+            spread: 55,
+            origin: { x: 0 }
+          });
+          confetti({
+            particleCount: 50,
+            angle: 120,
+            spread: 55,
+            origin: { x: 1 }
+          });
+        }, 250);
+      }
+    }
+
+    // Modals control
+    function openResponseModal() {
+      const modal = document.getElementById('responseModal');
+      const box = document.getElementById('modalBox');
+      modal.classList.remove('opacity-0', 'pointer-events-none');
+      box.classList.remove('scale-95');
+      box.classList.add('scale-100');
+    }
+
+    function closeResponseModal() {
+      const modal = document.getElementById('responseModal');
+      const box = document.getElementById('modalBox');
+      modal.classList.add('opacity-0', 'pointer-events-none');
+      box.classList.add('scale-95');
+      box.classList.remove('scale-100');
+    }
+
+    // Construct the cute message
+    function compileResponseMessage() {
+      const snack = document.getElementById('snackChoice').value.trim() || 'All your snacks';
+      const note = document.getElementById('gfCustomNote').value.trim() || 'I forgive you! 💕';
+      const recipient = siteData.sender ? ` to ${siteData.sender}` : '';
+      
+      return `Hey! I saw your cute apology website 🥰\n\n` +
+             `Official Verdict: I forgive you! 💕\n` +
+             `🍪 Snack Demand: ${snack}\n` +
+             `💌 My Message: "${note}"\n\n` +
+             `Come give me my hug now! 🧸`;
+    }
+
+    // WhatsApp Action
+    function sendViaWhatsApp() {
+      const message = compileResponseMessage();
+      const encodedMsg = encodeURIComponent(message);
+      let target = siteData.phone ? siteData.phone.replace(/[^0-9]/g, '') : '';
+      
+      let waUrl = '';
+      if (target) {
+        waUrl = `https://wa.me/${target}?text=${encodedMsg}`;
+      } else {
+        waUrl = `https://api.whatsapp.com/send?text=${encodedMsg}`;
+      }
+      
+      window.open(waUrl, '_blank');
+    }
+
+    // SMS Fallback
+    function sendViaSMS() {
+      const message = compileResponseMessage();
+      const encodedMsg = encodeURIComponent(message);
+      let smsUrl = '';
+      
+      if (siteData.phone) {
+        smsUrl = `sms:${siteData.phone}?&body=${encodedMsg}`;
+      } else {
+        smsUrl = `sms:?&body=${encodedMsg}`;
+      }
+      window.location.href = smsUrl;
+    }
+
+    // Copy response text
+    function copyMyMessage() {
+      const text = compileResponseMessage();
+      const tempArea = document.createElement('textarea');
+      tempArea.value = text;
+      document.body.appendChild(tempArea);
+      tempArea.select();
+      try {
+        document.execCommand('copy');
+        showToast('Message copied! You can paste it anywhere 💕');
+      } catch (err) {
+        showToast('Could not copy, please copy manually!');
+      }
+      document.body.removeChild(tempArea);
+    }
+
+    // Custom Toast
+    function showToast(text) {
+      const toast = document.getElementById('toast');
+      const toastMsg = document.getElementById('toastMsg');
+      toastMsg.textContent = text;
+      toast.classList.remove('opacity-0', 'pointer-events-none');
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'pointer-events-none');
+      }, 3000);
+    }
+
+    // Load configuration from URL param (?c=base64) or localStorage
+    window.onload = function() {
+      createFloatingHearts();
+      
+      const urlParams = new URLSearchParams(window.location.search);
+      const encodedConfig = urlParams.get('c');
+      const legacyPhone = urlParams.get('phone');
+      
+      if (encodedConfig) {
+        try {
+          const decoded = decodeURIComponent(atob(encodedConfig));
+          const parsed = JSON.parse(decoded);
+          siteData = { ...defaultSiteData, ...parsed };
+        } catch (e) {
+          console.error("Could not parse shared link config", e);
+        }
+      } else {
+        const saved = localStorage.getItem('cute_apology_data');
+        if (saved) {
+          try {
+            siteData = { ...defaultSiteData, ...JSON.parse(saved) };
+          } catch(e) {}
+        }
+      }
+
+      if (legacyPhone) {
+        siteData.phone = legacyPhone.replace(/[^0-9+]/g, '');
+      }
+
+      renderContent();
+    };
+  </script>
+</body>
+</html>
+```
